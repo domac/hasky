@@ -9,7 +9,7 @@ type RegistryEvent byte
 type OperationEvent byte
 
 const (
-	DISCOVERY = "/apus/agent-groups"
+	DISCOVERY = "/husky/agent-groups"
 
 	CHECK_ALIVE_INTERVAL = 3 * time.Second
 )

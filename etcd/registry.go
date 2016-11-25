@@ -133,8 +133,8 @@ func (self *EtcdRegistry) schedule() {
 
 //根据完整路径获取组与节点名称
 func (self *EtcdRegistry) getGroupAndAgentFromFullPath(dir string) (string, string) {
-	// ===> /apus/agent-groups/devops-001/members/localhost/heartbeat
-	if strings.Contains(dir, "/apus/agent-groups/") &&
+	// ===> /husky/agent-groups/devops-001/members/localhost/heartbeat
+	if strings.Contains(dir, "/husky/agent-groups/") &&
 		strings.Contains(dir, "/members/") && strings.Contains(dir, "/heartbeat") {
 		newGroupName := dir[:strings.Index(dir, "/members/")]
 		newAgentName := dir[:strings.Index(dir, "/heartbeat")]
