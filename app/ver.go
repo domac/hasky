@@ -5,7 +5,7 @@ import (
 	"runtime"
 )
 
-const Binary = "0.0.1"
+const Binary = "0.0.2"
 
 //输出版本号信息
 func VerString() string {

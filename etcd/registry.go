@@ -20,7 +20,7 @@ type EtcdRegistry struct {
 	lock            sync.RWMutex
 	registryClient  *Client
 	registryContext context.Context
-	workers         map[string]*AgentWorker
+	workers         map[string]*LeaderWorker
 	exchangeChan    chan *Exchange
 	isClosed        bool
 }
@@ -35,7 +35,7 @@ func NewEtcdRegistry(hosts string) *EtcdRegistry {
 	return &EtcdRegistry{
 		registryClient:  cli,
 		registryContext: ctx,
-		workers:         make(map[string]*AgentWorker, 5),
+		workers:         make(map[string]*LeaderWorker, 5),
 		exchangeChan:    make(chan *Exchange, 4096),
 		isClosed:        false}
 }
@@ -87,27 +87,26 @@ func (self *EtcdRegistry) discovery() {
 	for _, group := range nodeinfo {
 		membersDir := group + "/members"
 		memmbers, err := self.registryClient.GetDirChildren(membersDir)
-		if err != nil {
-			log.Error("error to get nodes from %s", membersDir)
+		if err != nil || memmbers == nil {
+			log.Error("error to get members from %s", membersDir)
+			continue
 		}
 
-		//获取组的成员信息
-		for _, agent := range memmbers {
-			log.Info("register a agent [%v] to a worker", agent)
-			if _, ok := self.workers[group]; !ok {
-				self.registWorker(group, agent)
-			}
+		log.Info("register a group [%s] to a worker", group)
+
+		if _, ok := self.workers[group]; !ok {
+			self.registWorker(group)
 		}
 	}
 
 	//监听组目录
-	worker, err := self.registryClient.CreateDirWatcher(DISCOVERY)
+	discoverWatcher, err := self.registryClient.CreateDirWatcher(DISCOVERY)
 	if err != nil {
 		return
 	}
 	go func() {
 		for !self.isClosed {
-			resp, err := worker.Next(ctx)
+			resp, err := discoverWatcher.Next(ctx)
 			if err != nil {
 				continue
 			}
@@ -125,7 +124,6 @@ func (self *EtcdRegistry) discovery() {
 //工作调度
 func (self *EtcdRegistry) schedule() {
 	for !self.isClosed {
-		log.Info("worker request agent exchange")
 		select {
 		case ex := <-self.exchangeChan:
 			go self.handleExchange(ex)
@@ -135,8 +133,8 @@ func (self *EtcdRegistry) schedule() {
 
 //根据完整路径获取组与节点名称
 func (self *EtcdRegistry) getGroupAndAgentFromFullPath(dir string) (string, string) {
-	// ===> /apps/agent-groups/devops-001/members/localhost/heartbeat
-	if strings.Contains(dir, "/abus/agent-groups/") &&
+	// ===> /apus/agent-groups/devops-001/members/localhost/heartbeat
+	if strings.Contains(dir, "/apus/agent-groups/") &&
 		strings.Contains(dir, "/members/") && strings.Contains(dir, "/heartbeat") {
 		newGroupName := dir[:strings.Index(dir, "/members/")]
 		newAgentName := dir[:strings.Index(dir, "/heartbeat")]
@@ -148,11 +146,8 @@ func (self *EtcdRegistry) getGroupAndAgentFromFullPath(dir string) (string, stri
 //agent注册处理
 func (self *EtcdRegistry) handleCreateEvent(dir string) {
 	group, agent := self.getGroupAndAgentFromFullPath(dir)
-
-	log.Info("%s ==== %s", group, agent)
-
 	if group != "" && agent != "" {
-		self.registWorker(group, agent)
+		self.registWorker(group)
 	}
 }
 
@@ -162,14 +157,14 @@ func (self *EtcdRegistry) handleRemoveEvent(dir string) {
 }
 
 //注册keepalive worker
-func (self *EtcdRegistry) registWorker(group, agent string) {
+func (self *EtcdRegistry) registWorker(group string) {
 	if _, ok := self.workers[group]; !ok {
-		log.Info("[ADD] new group >> %s", group)
-		log.Info("[ADD] new agent >> %s", agent)
-		w := NewWorker(self, 1*time.Second, group, agent)
+		log.Info("[ADD] REGISTER GROUP WORKER : %s ", group)
+		w := NewLeaderWorker(self, 1*time.Second, group)
 		self.lock.RLock()
 		self.workers[group] = w
 		self.lock.RUnlock()
+		w.StartWorking()
 	}
 }
 
@@ -177,7 +172,7 @@ func (self *EtcdRegistry) registWorker(group, agent string) {
 func (self *EtcdRegistry) unRegistWorker(group string) {
 	if w, ok := self.workers[group]; ok {
 		w.StopWorking()
-		log.Info("[REMOVE] old group >> %s", group)
+		log.Info("[REMOVE] UN-REGISTER GROUP >> %s", group)
 		self.lock.RLock()
 		delete(self.workers, group)
 		self.lock.RUnlock()
@@ -185,24 +180,49 @@ func (self *EtcdRegistry) unRegistWorker(group string) {
 	}
 }
 
-func (self *EtcdRegistry) GetWorkers() map[string]*AgentWorker {
+func (self *EtcdRegistry) GetWorkers() map[string]*LeaderWorker {
 	return self.workers
+}
+
+func (self *EtcdRegistry) updateGroupLeader(group string, oldNode, newNode string) {
+	if oldNode != newNode {
+		self.SetGroupLeader(group, newNode)
+
+		w := self.workers[group]
+		w.WorkingNode = newNode
+	}
 }
 
 func (self *EtcdRegistry) handleExchange(ex *Exchange) {
 	switch ex.OpEvent {
 	case UpdateEvent:
-		println("I received a event UPDATE")
+		self.updateGroupLeader(ex.WorkerGroup, ex.From, ex.To)
 	case ExitEvent:
-		log.Info("handle a exit event from group : %s", ex.WorkerGroup)
 		self.unRegistWorker(ex.WorkerGroup)
 	case StopEvent:
-		log.Info("handle a stop event from group : %s", ex.WorkerGroup)
-	default:
-		goto finish
+		self.StopLeaderRunning(ex.WorkerGroup)
 	}
-finish:
-	log.Info("handle exchange finish")
+}
+
+//停止当前的leader运行
+func (self *EtcdRegistry) StopLeaderRunning(group string) {
+	leader := self.GetGroupLeader(group)
+	log.Info("STOP LEADER RUNNING : %s", leader)
+}
+
+//获取组leader名称
+func (self *EtcdRegistry) GetGroupLeader(group string) string {
+	leaderFile := group + "/leader"
+	leader, err := self.registryClient.Get(leaderFile)
+	if err != nil {
+		return ""
+	}
+	return leader
+}
+
+func (self *EtcdRegistry) SetGroupLeader(group string, leader string) error {
+	leaderFile := group + "/leader"
+	return self.registryClient.Set(leaderFile, leader)
 }
 
 //注册服务关闭
