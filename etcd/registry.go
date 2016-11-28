@@ -154,6 +154,11 @@ func (self *EtcdRegistry) handleCreateEvent(dir string) {
 //元素移除处理
 func (self *EtcdRegistry) handleRemoveEvent(dir string) {
 	log.Info("[DELETE] >> %s", dir)
+
+	if g, ok := self.workers[dir]; ok {
+		log.Info("[DELETE][GROUP] >> %s", g.Group)
+		self.unRegistWorker(dir)
+	}
 }
 
 //注册keepalive worker
