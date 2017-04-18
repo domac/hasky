@@ -98,7 +98,7 @@ func (self *LeaderWorker) Keepalive() {
 		}
 	} else {
 		//心跳正常
-		log.Info("[SUCCESS][%s] Aalived -> %s !", self.WorkingNode, self.LastKeepalive)
+		log.Info("[SUCCESS][%s/members/%s] ALIVED!", self.Group, self.WorkingNode)
 	}
 }
 
@@ -173,7 +173,7 @@ func (self *LeaderWorker) FindGroupAliveNode() (string, error) {
 			return member, nil
 		}
 	}
-	errMsg := fmt.Sprintf("No Alive Node For Leader Found In %s", self.Group)
+	errMsg := fmt.Sprintf("[ERROR] No Alive Node For Leader Found In %s", self.Group)
 	return "", errors.New(errMsg)
 }
 

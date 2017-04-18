@@ -11,7 +11,7 @@ type OperationEvent byte
 const (
 	DISCOVERY = "/husky/agent-groups"
 
-	CHECK_ALIVE_INTERVAL = 3 * time.Second
+	CHECK_ALIVE_INTERVAL = 2 * time.Second
 )
 
 const (
