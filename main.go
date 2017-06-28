@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/domac/husky/app"
+	"github.com/domac/hasky/app"
 	"github.com/judwhite/go-svc/svc"
 	"github.com/mreiferson/go-options"
 	"log"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	flagSet      = flag.NewFlagSet("husky", flag.ExitOnError)
+	flagSet      = flag.NewFlagSet("hasky", flag.ExitOnError)
 	showVersion  = flagSet.Bool("version", false, "print version string") //版本
 	config       = flagSet.String("config", "", "path to config file")
 	httpAddress  = flagSet.String("http-address", "0.0.0.0:16630", "<addr>:<port> to listen on for HTTP clients")

@@ -16,6 +16,6 @@ func NewOptions() *Options {
 	return &Options{
 		HTTPAddress:  "0.0.0.0:13360",
 		EtcdEndpoint: "0.0.0.0:2379",
-		Logger:       log.New(os.Stderr, "[HUSKY] ", log.Ldate|log.Ltime|log.Lmicroseconds),
+		Logger:       log.New(os.Stderr, "[hasky] ", log.Ldate|log.Ltime|log.Lmicroseconds),
 	}
 }

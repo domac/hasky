@@ -1,4 +1,4 @@
-Husky
+Hasky
 ======
 基于Etcd的服务发现与故障恢复组件
 
@@ -6,11 +6,11 @@ Husky
 
 - 服务发现
 
-    agent启动的时候, 能被husky感知并添加到监控任务
+    agent启动的时候, 能被hasky感知并添加到监控任务
 
 - 故障恢复
 
-    agent运行过程中出现故障, husky会对它所在的组进行leader选举, 选出新的leader继续工作
+    agent运行过程中出现故障, hasky会对它所在的组进行leader选举, 选出新的leader继续工作
 
 - 服务开关
 
@@ -21,4 +21,4 @@ Husky
 
 ## 项目结构图
 
-![husky](husky.png)
+![hasky](hasky.png)

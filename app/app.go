@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/domac/husky/etcd"
+	"github.com/domac/hasky/etcd"
 	"log"
 	"net"
 	"os"

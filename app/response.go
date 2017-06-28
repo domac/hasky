@@ -40,7 +40,7 @@ func (r Result) Error() string {
 }
 
 func acceptVersion(req *http.Request) int {
-	if req.Header.Get("accept") == "application/vnd.husky; version=1.0" {
+	if req.Header.Get("accept") == "application/vnd.hasky; version=1.0" {
 		return 1
 	}
 
@@ -112,7 +112,7 @@ func RespondDefault(w http.ResponseWriter, code int, data interface{}) {
 	if isJSON {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	}
-	w.Header().Set("X-HUSKY-Content-Type", "husky; version=1.0")
+	w.Header().Set("X-hasky-Content-Type", "hasky; version=1.0")
 	w.WriteHeader(code)
 	w.Write(response)
 }

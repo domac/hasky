@@ -9,5 +9,5 @@ const Binary = "0.0.2"
 
 //输出版本号信息
 func VerString() string {
-	return fmt.Sprintf("%s v%s (built w/%s)", "husky", Binary, runtime.Version())
+	return fmt.Sprintf("%s v%s (built w/%s)", "hasky", Binary, runtime.Version())
 }
