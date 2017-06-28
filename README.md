@@ -1,6 +1,6 @@
 Hasky
 ======
-基于Etcd的服务发现与故障恢复组件
+Hasky基于Etcd的服务发现与故障恢复组件
 
 本项目是作为[Lolita](https://github.com/domac/lolita)的附加扩展项目，提供以下功能
 
