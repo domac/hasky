@@ -6,15 +6,15 @@ Hasky基于Etcd的服务发现与故障恢复组件
 
 - 服务发现
 
-    agent启动的时候, 能被hasky感知并添加到监控任务
+    lolita agent启动的时候, 能被hasky感知并添加到监控任务
 
 - 故障恢复
 
-    agent运行过程中出现故障, hasky会对它所在的组进行leader选举, 选出新的leader继续工作
+    lolita agent运行过程中出现故障, hasky会对它所在的组进行leader选举, 选出新的leader继续工作
 
 - 服务开关
 
-    添加agent的运行开关,随时切换入口
+    添加lolita agent的运行开关,随时切换入口
 
 - 作业注册
 
